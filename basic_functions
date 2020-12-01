@@ -1,0 +1,38 @@
+#--------------------------NECESSARY IMPORTS--------------------------------------------
+from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient import discovery
+import pandas as pd
+from pprint import pprint
+
+#----------------------------CONSTANTS----------------------------------------------------
+SPREADSHEET_ID = '1_mWM9veTReMzj8Yp0LKUXM2Z7TtHSssyrD_LZUw_-m4'
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive'] # define the scope
+creds = ServiceAccountCredentials.from_json_keyfile_name('testSheets.json', SCOPE) # add credentials to the account
+service = discovery.build('sheets', 'v4', credentials=creds)
+
+letters = ['A','B','C','D','E','F','G']
+#-----------------------------GET DATA-----------------------------------------------------
+def get_data(range):
+    response = service.spreadsheets().values().get(
+        spreadsheetId=SPREADSHEET_ID,
+        majorDimension='ROWS',
+        range=range
+    ).execute()
+
+    return response
+
+#------------------------------UPDATE SHEET DATA----------------------------------------------------------
+def update_cell(range, data):
+    service.spreadsheets().values().update(
+        spreadsheetId=SPREADSHEET_ID,
+        range=str(range),
+        valueInputOption="USER_ENTERED",
+        body={"values": [data]}
+    ).execute()
+
+#--------------------------------------CLEAN THE UNNECESSARY ONES------------------------------------------
+def purge_previous(range):
+    service.spreadsheets().values().clear(
+        spreadsheetId=SPREADSHEET_ID,
+        range=range
+    ).execute()
