@@ -1,0 +1,155 @@
+from basic_functions import *
+
+#----------------------------------FILL IN THE REST OF THE YEAR USING EXISTING DATA----------------------------
+def fill_in_year(row):
+    length_data = get_data('A1:L10')
+    test = ['0','0','0','0','0','0']
+    average = 0
+    count = 0
+    for b in range(6):
+        #Add 1 to shift the columns to the right 1
+        if(length_data['values'][row][b + 1] != ''):
+            test[b] = length_data['values'][row][b + 1]
+            average = average + float(length_data['values'][row][b + 1])
+            count = count + 1
+    average = average / count
+    for c in range(6):
+        if(test[c] == '0'):
+            test[c] = str(average)
+        column = letters[c + 1]
+        update_cell(column + str(row + 1), [test[c]])
+
+
+#------------------------------------------------CONVERT TO LETTER------------------------------------------------
+def convert_to_letter(row):
+    data = get_data('A1:L10')
+    final = float(data['values'][row ][7])
+    column = 'I'
+    #Check each possible grade
+    if(final >= 96.5):
+        update_cell(column + str(row + 1),["A+"])
+        return 4.33
+    if(final < 96.5 and final >= 91.5):
+        update_cell(column + str(row + 1), ["A"])
+        return 4.00
+    if (final < 91.5 and final >= 89.5):
+        update_cell(column + str(row + 1), ["A-"])
+        return 3.67
+    if (final < 89.5 and final >= 86.5):
+        update_cell(column + str(row + 1), ["B+"])
+        return 3.33
+    if (final < 86.5 and final >= 83.5):
+        update_cell(column + str(row + 1), ["B"])
+        return 3.00
+    if (final < 83.5 and final >= 79.5):
+        update_cell(column + str(row + 1), ["B-"])
+        return 2.67
+    if (final < 79.5 and final >= 76.5):
+        update_cell(column + str(row + 1), ["C+"])
+        return 2.33
+    if (final < 76.5 and final >= 73.5):
+        update_cell(column + str(row + 1), ["C"])
+        return 2.00
+    if (final < 73.5 and final >= 69.5):
+        update_cell(column + str(row + 1), ["C-"])
+        return 1.67
+    if(final < 69.5):
+        update_cell(column + str(row + 1), ["U"])
+        return 0.00
+
+#-------------------------------------CHECK THE WEIGHTAGE OF SUBJECT-----------------------------------------
+def find_and_calculate_weightage(row,letter_weight):
+    data = get_data('A1:L10')
+    subject = str(data['values'][row][0])
+    if "AP" in subject:
+        #AP has 1.0 more in academic
+        weight_multiplier = 1.0
+    elif "Honors" in subject:
+        #Honors has 0.67 extra weightage
+        weight_multiplier = 0.67
+    else:
+        #Academic has 0 extra weightage
+        weight_multiplier = 0
+
+    # Calculate weightage with 0.67 case
+    weighted_GPA = letter_weight + weight_multiplier
+    if round(weighted_GPA % 0.1, 2) == 0.04:
+        weighted_GPA = weighted_GPA - 0.01
+    # Add weightage to sheet
+    update_cell('J' + str(row + 1), [weighted_GPA])
+
+def calculate_numeric_final(row):
+    data = get_data('A1:L10')
+    year_end = list()
+    marking_period_sum = 0
+    exam_sum = 0
+    for a in range(6):
+        val = data['values'][row][a + 1]
+        # check every marking period until you get to finals and midterm
+        if (a > 3):
+            try:
+                exam_sum += float(val)
+            except:
+                exam_sum = exam_sum
+        else:
+            try:
+                marking_period_sum = float(val) + marking_period_sum
+            except:
+                marking_period_sum = marking_period_sum
+    # calculate the final average
+    marking_period_weight = marking_period_sum / 4 * 0.8
+    exam_weight = exam_sum / 2 * 0.2
+    sum = marking_period_weight + exam_weight
+    # update it onto the cell
+    column = 'H'
+    update_cell(column + str(row + 1), [sum])
+
+#-----------------------------INCLUDE CREDITS OF THE CLASS------------------------------------------
+def include_credits(row):
+    data = get_data('A1:L10')
+    weighted_GPA = data['values'][row][9]
+    credits = data['values'][row][10]
+    raw = float(weighted_GPA) * float(credits)
+    column = 'L'
+    update_cell(column + str(row + 1), [raw])
+
+def calculate_final_GPA():
+    column = get_data('L1:L10')
+    column_length = len(column['values'])
+    data = get_data('A1:L10')
+    #Calculate weighted gpa sum column
+    weighted_sum = 0
+    #Remember its column_length - 1 because it counts the extra header row
+    for row in range(column_length - 1):
+        #11 because that is column L
+        weighted_sum = float(data['values'][row + 1][11]) + weighted_sum
+    #Calculate credits sum column
+    credit_sum = 0
+    for row in range(column_length - 1):
+        credit_sum = float(data['values'][row + 1][10]) + credit_sum
+    #Print and update columns
+    final_GPA = (weighted_sum / credit_sum)
+    update_cell('M' + str(column_length), [final_GPA])
+
+#----------------------------CALCULATE YEAR END GRADE----------------------------------------------------
+def master(data, rows):
+    # clear previous unneeded columns
+    purge_previous('H2:J10')
+    purge_previous('L2:M10')
+    for row in range(rows):
+        print("row", row)
+        if(row != 0):
+            #Ensure the row is filled
+            fill_in_year(row)
+            print("filledin")
+            #Final numeric grade
+            calculate_numeric_final(row)
+            print("calculated final number")
+            #Letter Grade and display
+            letter = convert_to_letter(row)
+            #Add the weightage to final GPA and display
+            find_and_calculate_weightage(row, letter)
+            #multiply Weighted GPA by credits
+            include_credits(row)
+            #Calculate final gpa
+    calculate_final_GPA()
