@@ -1,0 +1,6 @@
+from advanced_functions import *
+#---------------------------MAIN-----------------------------------------------------------------
+#whatever row you want to go to, -1 and that's master input
+data = get_data('A1:L10')
+master(data, 9)
+
